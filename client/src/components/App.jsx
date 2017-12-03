@@ -270,12 +270,24 @@ class App extends React.Component {
     this.goToDashboard();
   }
 
-  submitExercise(data) {
-    console.log('it got to submitExercise', data);
-    alert('it got to submit exercise!')
-    var request = new XMLHttpRequest();
-    request.open("POST", "/createworkout");
-    request.send(data);
+  submitExercise(exerciseData) {
+    for (var p of exerciseData) {
+      console.log(p);
+    }
+
+/*    let request = new XMLHttpRequest();
+    request.open('POST', '/createworkout', true);
+    request.send(exerciseData);*/
+    $.ajax({
+      type: 'POST',
+      url: '/createworkout',
+      data: exerciseData,
+      contentType: false,
+      processData: false,
+      success: (data) => {console.log('Success in the form submission: ', data)},
+      error: () => {console.log('Form submission failed on the AJAX POST request')}
+    });
+
     this.setState({
       visible: !this.state.visible
     })

@@ -2,38 +2,54 @@ var express = require('express');
 var db = require('./db').mongoose;
 var bodyParser = require('body-parser');
 var path = require('path');
-
 var Exercise = require('./db').exerciseModel;
 var User = require('./db').userModel;
 var ObjectID = require('mongodb').ObjectID;
 var session = require('express-session')
 var FileStore = require('session-file-store')(session);
+var multer = require('multer');
 
+// Initiate Express Server
 var app = express();
+app.listen(process.env.PORT || 3000);
+console.log('server is running');
 
+// Initiate PW Encryption
 var bcrypt = require('bcrypt');
 var saltRounds = 10;
 var salt = bcrypt.genSaltSync(saltRounds);
 
-app.listen(process.env.PORT || 3000);
-console.log('server is running');
-
+// Initiate Multer
+var storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../userfiles'));
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '_' + file.originalname);
+  }
+});
+var upload = multer({'storage': storage}).single('videoFile');
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * *
-  Middleware
+  Middleware Load
 * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(upload);
+app.use(express.static(path.join(__dirname, '../userfiles')));
 app.use('/public', express.static('client/public'));
 app.use('/react', express.static('node_modules/react/dist'));
 app.use('/react-dom', express.static('node_modules/react-dom/dist'));
 app.use('/react-router', express.static('node_modules/react-router'));
 app.use('/jquery', express.static('node_modules/jquery/dist'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+})
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * *
-  User Persistent Session
+  User Persistent Session Settings
 * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 app.use(session({
@@ -41,7 +57,7 @@ app.use(session({
   resave: false,
   store: new FileStore(),
   saveUninitialized: true,
-  cookie: { secret: 'hello', maxAge: 1000 * 60 * 60 *24 * 365, secure: false}
+  cookie: { secret: 'hello', maxAge: 1000 * 60 * 60 * 24 * 365, secure: false}
 }))
 
 app.use(function(req, res, next) {
@@ -72,16 +88,41 @@ app.get('/destroyCookie', destroyCookie);
 app.post('/addWorkout', addWorkout);
 app.post('/login', checkLogin);
 app.post('/signup', addSignup);
-
-//DELETE THIS!
-app.post('/createworkout', function(req, res) {
-  console.log('this is a test to confirm the post request from the form arriveddd....')
-});
+app.post('/createworkout', saveWorkout);
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * *
   Request Handlers
 * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+function saveWorkout(req, res) {
+  console.log('this is req.body', req.body);
+  console.log('this is req.file', req.file);
+
+  var newWorkout = {
+    type: req.body.type,
+    name: req.body.name,
+    description: req.body.description,
+    videoURL: req.body.videoURL,
+    createdBy: req.session.name,
+    videoFilename: req.file.filename
+  };
+
+  Exercise.find({createdBy: req.session.name, name: req.body.name}, function(err, user) {
+    console.log('it gets inside of exercise.find')
+    if (err) throw err;
+    if (user.length === 0) {
+      Exercise.create(newWorkout, function(err, entry) {
+        console.log('it gets inside exercise.create');
+        if (err) throw err;
+        res.send(newWorkout);
+      });
+    } else {
+      res.send('This workout already exists');
+    }
+  });
+}
+
 
 function getHistory(req, res) {
   var name = req.query.username;
@@ -186,7 +227,6 @@ function checkLogin(req, res) {
 
 
 function checkSession(req, res) {
-  console.log('this is the session name from checkSession cb', req.session.name)
   if (req.session.name) {
     User.findOne({username: req.session.name}, function(err, data) {
       if (err) {

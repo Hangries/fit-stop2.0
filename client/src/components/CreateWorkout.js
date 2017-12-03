@@ -7,18 +7,20 @@ class CreateWorkout extends React.Component {
   handleSubmit(e) {
     e.preventDefault();
 
-    let form = document.getElementsByTagName('form')[0];
+    let form = document.querySelector("form");
     let formData = new FormData(form);
+    console.log(form);
+    console.log(formData.get('name'));
     this.props.submitExercise(formData);
   }
 
  render() {
   return (
     <div>
-      <form encType="multipart/form-data" onSubmit={this.handleSubmit} >
+      <form method="POST" encType="multipart/form-data" onSubmit={this.handleSubmit} >
         <div>
           <label className="createWorkout">Exercise Type:
-            <select className="workoutType" required>
+            <select className="workoutType" name="type" required>
               <option value="warmup">Warm Up</option>
               <option value="workout">Workout</option>
               <option value="cooldown">Cooldown</option>
@@ -37,13 +39,13 @@ class CreateWorkout extends React.Component {
           <br />
         <div>
           <label className="createWorkout">Upload Video:
-            <input type="file" name="upload" accept="video/*" />
+            <input type="file" name="videoFile" accept="video/*" />
           </label>
           <br />
         </div>
         <div>
           <label className="createWorkout">Video URL (optional):
-            <input type="text" name="upload" />
+            <input type="text" name="videoURL" />
           </label>
           <br />
         </div>
@@ -51,7 +53,7 @@ class CreateWorkout extends React.Component {
           <input type="submit" value="Submit" className="btn-createWorkout-Form" />
         </div>
       </form>
-      {this.props.visible ? <p style={{'color': 'green'}} > The form has been submitted </p> : <span></span>}
+      {this.props.visible ? <p style={{'color': 'green'}} > Your Workout has been submitted. </p> : <span></span>}
     </div>
     )
   }
