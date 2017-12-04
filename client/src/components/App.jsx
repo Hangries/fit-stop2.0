@@ -28,6 +28,9 @@ class App extends React.Component {
     this.goToSignUp = this.goToSignUp.bind(this);
     this.goToProfile = this.goToProfile.bind(this);
     this.getWarmups = this.getWarmups.bind(this);
+
+    this.getExerciseByType = this.getExerciseByType.bind(this);
+
     this.getWorkoutHistory = this.getWorkoutHistory.bind(this);
     this.sendWorkoutData = this.sendWorkoutData.bind(this);
     this.logOut = this.logOut.bind(this);
@@ -36,6 +39,9 @@ class App extends React.Component {
     this.createWorkout = this.createWorkout.bind(this);
     this.submitExercise = this.submitExercise.bind(this);
     // this.getWarmups();
+
+    this.getExerciseByType('cooldown');
+
   }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -125,6 +131,21 @@ class App extends React.Component {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * *
   The following functions send requests to the server
 * * * * * * * * * * * * * * * * * * * * * * * * * * */
+  getExerciseByType(type) {
+    $.ajax({
+      method: 'GET',
+      url: '/getExerciseByType',
+      dataType: 'json',
+      data: {type: type},
+      success: (data) => {
+        console.log('success! client side: workouts', data)
+      },
+      error: (err) => {
+        console.log('err getting workouts in client!', err)
+      }
+    })
+  }
+
   getWarmups() {
     $.ajax({
       method: 'GET',
